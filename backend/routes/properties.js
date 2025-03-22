@@ -6,6 +6,7 @@ const { Sequelize } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const sharp = require('sharp'); // Add sharp for image processing
 const { bucket } = require('../config/firebase');
 
 // Configure multer with disk storage
@@ -17,7 +18,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Helper function to upload to Firebase
+// Helper function to upload to Firebase with size reduction
 async function uploadToFirebase(file) {
   try {
     if (!file || !file.path) {
@@ -30,19 +31,61 @@ async function uploadToFirebase(file) {
     console.log('Uploading file to Firebase:', fileName);
     console.log('Target bucket:', bucket.name);
 
-    const fileBuffer = await fs.readFile(file.path);
-    await fileUpload.save(fileBuffer, {
-      metadata: {
-        contentType: file.mimetype,
-      },
-      public: true, // Make the file public
-    });
+    // Read the original file
+    const originalBuffer = await fs.readFile(file.path);
 
-    // Use the public URL instead of a signed URL
+    // Use sharp to resize and compress the image
+    const compressedBuffer = await sharp(originalBuffer)
+      .resize({
+        width: 800, // Resize to a reasonable width (adjust as needed)
+        height: 800,
+        fit: 'inside', // Maintain aspect ratio, fit within 800x800
+        withoutEnlargement: true, // Don’t upscale smaller images
+      })
+      .png({ quality: 80 }) // Compress PNG (adjust quality as needed)
+      .toBuffer();
+
+    // Check the size (400KB = 400 * 1024 bytes)
+    const maxSize = 400 * 1024; // 400KB in bytes
+    if (compressedBuffer.length > maxSize) {
+      console.warn('Compressed image still exceeds 400KB, further reducing quality');
+      // Further reduce quality if still too large
+      const furtherCompressedBuffer = await sharp(originalBuffer)
+        .resize({
+          width: 800,
+          height: 800,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .png({ quality: 50 }) // Lower quality to ensure size < 400KB
+        .toBuffer();
+
+      if (furtherCompressedBuffer.length > maxSize) {
+        throw new Error('Unable to compress image below 400KB');
+      }
+      await fileUpload.save(furtherCompressedBuffer, {
+        metadata: {
+          contentType: file.mimetype,
+        },
+        public: true,
+      });
+    } else {
+      await fileUpload.save(compressedBuffer, {
+        metadata: {
+          contentType: file.mimetype,
+        },
+        public: true,
+      });
+    }
+
+    // Use the public URL
     const url = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     console.log('File uploaded successfully, URL:', url);
+    console.log('Uploaded file size:', compressedBuffer.length / 1024, 'KB');
 
+    // Clean up local file
     await fs.unlink(file.path).catch(err => console.error('Failed to delete local file:', err));
+
     return url;
   } catch (error) {
     console.error('Firebase upload failed:', error);
@@ -89,7 +132,7 @@ router.post('/', upload.single('image'), async (req, res) => {
   }
 });
 
-// Other routes remain unchanged
+// Other routes (GET, PUT, DELETE) remain unchanged
 router.get('/', async (req, res) => {
   const { companyId, search } = req.query;
   const where = { isDeleted: false };
