@@ -1,6 +1,7 @@
 // backend/models/WhatsAppInquiry.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.js');
+const Property = require('./Property');
 
 const WhatsAppInquiry = sequelize.define(
   'whatsapp_inquiry',
@@ -44,6 +45,18 @@ const WhatsAppInquiry = sequelize.define(
       allowNull: true, 
       defaultValue: DataTypes.NOW 
     },
+    agentId: { 
+      type: DataTypes.UUID, 
+      allowNull: true 
+    }, 
+    responseMessage: { 
+      type: DataTypes.TEXT, 
+      allowNull: true 
+    }, 
+    respondedAt: { 
+      type: DataTypes.DATE, 
+      allowNull: true 
+    }, 
     isDeleted: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -52,8 +65,16 @@ const WhatsAppInquiry = sequelize.define(
   },
   {
     timestamps: false,
-    tableName: 'whatsapp_inquiry'
+    tableName: 'whatsapp_inquiry',
+    indexes: [
+      { fields: ['companyId'] },
+      { fields: ['propertyId'] },
+      { fields: ['status'] },
+    ]
   }
 );
+
+WhatsAppInquiry.belongsTo(Property, { foreignKey: 'propertyId' });
+Property.hasMany(WhatsAppInquiry, { foreignKey: 'propertyId' });
 
 module.exports = WhatsAppInquiry;

@@ -12,6 +12,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/:id', async (req, res) => {
+  try {
+    const company = await Company.findByPk(req.params.id);
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    res.json(company);
+  } catch (error) {
+    console.error('Error fetching company:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const { name, description, logo, contactEmail, whatsappNumber } = req.body;

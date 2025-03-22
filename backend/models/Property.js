@@ -61,6 +61,13 @@ const Property = sequelize.define(
   {
     timestamps: false,
     tableName: 'property',
+    indexes: [
+      { fields: ['title'], using: 'BTREE' },          // For search optimization
+      { fields: ['location'], using: 'BTREE' },       // For location-based searches
+      { fields: ['price'], using: 'BTREE' },          // For price sorting
+      { fields: ['companyId'], using: 'BTREE' },      // For company filtering
+      { fields: ['tier', 'status'], using: 'BTREE' }, // For tier/status filtering
+    ]
   }
 );
 

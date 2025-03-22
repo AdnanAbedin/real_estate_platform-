@@ -1,14 +1,12 @@
-// backend/server.js
+require('dotenv').config(); 
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const sequelize = require('./config/database');
 const bannerRoutes = require('./routes/banners');
 const companyRoutes = require('./routes/companies');
 const propertyRoutes = require('./routes/properties');
 const whatsappRoutes = require('./routes/whatsapp');
 
-dotenv.config();
 const app = express();
 
 console.log('Starting server...');
@@ -25,7 +23,7 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Database sync
-sequelize.sync({ force: false })
+sequelize.sync({ alter: true })
   .then(() => console.log('Database synced successfully'))
   .catch(err => console.error('Failed to sync database:', err));
 

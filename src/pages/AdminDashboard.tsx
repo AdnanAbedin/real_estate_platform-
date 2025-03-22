@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Plus, Trash2, Edit } from "lucide-react";
 import PropertyForm from "../components/PropertyForm";
 import BannerForm from "../components/BannerForm";
+import AgentProfile from '../components/AgentProfile';
 
 interface Property {
   id: string;
@@ -217,6 +218,15 @@ function AdminDashboard() {
           </button>
         </form>
       )}
+  
+
+     {/* Add Agent Stats Section */}
+    <h2 className="text-2xl font-semibold mb-4">Agent Performance</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {companies.map((company) => (
+        <AgentProfile key={company.id} companyId={company.id} />
+      ))}
+    </div>
 
       {/* Banner Management */}
       <h2 className="text-2xl font-semibold mb-4">Manage Banners</h2>
@@ -332,12 +342,16 @@ function AdminDashboard() {
                   <td className="px-6 py-4">{property.tier}</td>
                   <td className="px-6 py-4">{property.status}</td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setEditingProperty(property)}
-                      className="text-indigo-600 mr-4"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
+                  <button
+  onClick={() => {
+    setEditingProperty(property);
+    setShowPropertyForm(true); // Ensure the form is opened
+  }}
+  className="text-indigo-600 mr-4"
+>
+  <Edit className="w-5 h-5" />
+</button>
+
                     <button
                       onClick={() => deleteProperty.mutate(property.id)}
                       className="text-red-600"

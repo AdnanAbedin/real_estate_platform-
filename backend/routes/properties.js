@@ -132,28 +132,40 @@ router.post('/', upload.single('image'), async (req, res) => {
   }
 });
 
-// Other routes (GET, PUT, DELETE) remain unchanged
+
 router.get('/', async (req, res) => {
-  const { companyId, search } = req.query;
+  const { companyId, search, minPrice, maxPrice, tier } = req.query;
   const where = { isDeleted: false };
 
   if (companyId) where.companyId = companyId;
+  if (minPrice) where.price = { [Sequelize.Op.gte]: minPrice };
+  if (maxPrice) where.price = { [Sequelize.Op.lte]: maxPrice };
+  if (tier) where.tier = tier;
+  
   if (search) {
     where[Sequelize.Op.or] = [
-      { title: { [Sequelize.Op.iLike]: `%${search}%` } },
-      { location: { [Sequelize.Op.iLike]: `%${search}%` } },
+      Sequelize.where(
+        Sequelize.fn('to_tsvector', Sequelize.col('title')),
+        Sequelize.fn('plainto_tsquery', search)
+      ),
+      Sequelize.where(
+        Sequelize.fn('to_tsvector', Sequelize.col('location')),
+        Sequelize.fn('plainto_tsquery', search)
+      ),
     ];
   }
 
   try {
     const properties = await Property.findAll({
       where,
-      order: [['tier', 'DESC']],
+      order: [['tier', 'DESC'], ['price', 'ASC']],
+      limit: 20, // Add pagination
+      offset: req.query.offset ? parseInt(req.query.offset) : 0,
     });
     res.json(properties);
   } catch (error) {
     console.error('Error fetching properties:', error);
-    res.status(500).json({ error: 'Failed to fetch properties', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch properties' });
   }
 });
 

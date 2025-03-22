@@ -1,8 +1,9 @@
-import React from "react";
+// src/pages/PropertyDetailPage.tsx
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery } from "react-query";
+import { useQuery, useMutation } from "react-query";
 import axios from "axios";
-import { MapPin, DollarSign, Home, Bed, Bath, Square } from "lucide-react";
+import { MapPin, DollarSign, Home, Bed, Bath, Square, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Property {
@@ -25,17 +26,52 @@ interface Property {
 
 function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const { data: property, isLoading, error } = useQuery<Property>(
     ["property", id],
     async () => {
-      const response = await axios.get(`http://localhost:5001/api/properties/${id}`);
+      const response = await axios.get(`${API_URL}/properties/${id}`);
       return response.data;
     },
     {
       onError: () => toast.error("Failed to load property details"),
     }
   );
+
+  const mutation = useMutation(
+    async () => {
+      const inquiryData = {
+        propertyId: id,
+        companyId: property?.companyId,
+        customerPhone: phone,
+        message,
+      };
+      return await axios.post(`${API_URL}/whatsapp`, inquiryData);
+    },
+    {
+      onSuccess: () => {
+        toast.success("Inquiry sent successfully!");
+        setPhone("");
+        setMessage("");
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to send inquiry: ${error.response?.data?.details || error.message}`);
+      },
+    }
+  );
+
+  const handleInquirySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone || !message) {
+      toast.error("Please enter both phone number and message");
+      return;
+    }
+    mutation.mutate();
+  };
 
   if (isLoading) return <div className="p-4">Loading...</div>;
   if (error || !property) return <div className="p-4 text-red-600">Error loading property</div>;
@@ -53,53 +89,42 @@ function PropertyDetailPage() {
 
         <div className="p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
+          {/* ... existing property details ... */}
 
-          <div className="flex items-center text-gray-600 mb-4">
-            <MapPin className="h-5 w-5 mr-2" />
-            <span>{property.location}</span>
-          </div>
-
-          <div className="flex items-center text-indigo-600 text-2xl font-bold mb-6">
-            <DollarSign className="h-6 w-6 mr-2" />
-            <span>${property.price.toLocaleString()}</span>
-          </div>
-
-          {property.details && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-                <Home className="h-5 w-5 text-indigo-600 mr-2" />
-                <div>
-                  <div className="text-sm text-gray-500">Type</div>
-                  <div className="font-medium">{property.details.type}</div>
-                </div>
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Contact Agent via WhatsApp</h2>
+            <form onSubmit={handleInquirySubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="+1234567890"
+                  required
+                />
               </div>
-              <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-                <Bed className="h-5 w-5 text-indigo-600 mr-2" />
-                <div>
-                  <div className="text-sm text-gray-500">Bedrooms</div>
-                  <div className="font-medium">{property.details.bedrooms}</div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Message</label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  rows={3}
+                  placeholder="I'm interested in this property..."
+                  required
+                />
               </div>
-              <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-                <Bath className="h-5 w-5 text-indigo-600 mr-2" />
-                <div>
-                  <div className="text-sm text-gray-500">Bathrooms</div>
-                  <div className="font-medium">{property.details.bathrooms}</div>
-                </div>
-              </div>
-              <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-                <Square className="h-5 w-5 text-indigo-600 mr-2" />
-                <div>
-                  <div className="text-sm text-gray-500">Area</div>
-                  <div className="font-medium">{property.details.area}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="prose max-w-none">
-            <h2 className="text-xl font-semibold mb-4">Description</h2>
-            <p className="text-gray-600">{property.description}</p>
+              <button
+                type="submit"
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                disabled={mutation.isLoading}
+              >
+                <MessageSquare className="h-5 w-5 mr-2" />
+                {mutation.isLoading ? "Sending..." : "Send WhatsApp Inquiry"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
