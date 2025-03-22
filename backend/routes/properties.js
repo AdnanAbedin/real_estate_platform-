@@ -197,4 +197,5 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = router; // Default export is the router
+module.exports.uploadToFirebase = uploadToFirebase; // Named export for the function

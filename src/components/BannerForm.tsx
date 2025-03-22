@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from 'react-query';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import { Upload } from 'lucide-react';
-import { useDropzone } from 'react-dropzone';
+// src/components/BannerForm.tsx
+import React, { useState } from "react";
+import { useMutation, useQueryClient } from "react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { Upload } from "lucide-react";
+import { useDropzone } from "react-dropzone";
 
 interface BannerFormProps {
   banner?: Banner;
@@ -15,67 +16,82 @@ interface Banner {
   title: string;
   imageUrl: string;
   targetUrl: string;
-  placement: 'homepage' | 'listing' | 'search';
+  placement: "homepage" | "listing" | "search";
   startDate: string;
   endDate: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
 }
 
 function BannerForm({ banner, onClose }: BannerFormProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Banner>(banner || {
-    title: '',
-    imageUrl: '',
-    targetUrl: '',
-    placement: 'homepage',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-    status: 'active'
+    title: "",
+    imageUrl: "",
+    targetUrl: "",
+    placement: "homepage",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+    status: "active",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png']
-    },
+    accept: { "image/*": [".jpeg", ".jpg", ".png"] },
     maxFiles: 1,
-    onDrop: async (acceptedFiles) => {
-      // In a real application, implement image upload to your storage service
-      setFormData(prev => ({
+    onDrop: (acceptedFiles) => {
+      setImageFile(acceptedFiles[0]);
+      setFormData((prev) => ({
         ...prev,
-        imageUrl: URL.createObjectURL(acceptedFiles[0])
+        imageUrl: URL.createObjectURL(acceptedFiles[0]),
       }));
-    }
+    },
   });
 
   const mutation = useMutation(
     async (data: Banner) => {
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", data.title);
+      formDataToSend.append("targetUrl", data.targetUrl);
+      formDataToSend.append("placement", data.placement);
+      formDataToSend.append("startDate", data.startDate);
+      formDataToSend.append("endDate", data.endDate);
+      formDataToSend.append("status", data.status);
+
+      if (imageFile) {
+        formDataToSend.append("image", imageFile);
+      }
+
+      const config = { headers: { "Content-Type": "multipart/form-data" } };
+
       if (banner?.id) {
-        const response = await axios.put(`/api/banners/${banner.id}`, data);
-        return response.data;
+        return await axios.put(`http://localhost:5001/api/banners/${banner.id}`, formDataToSend, config).then((res) => res.data);
       } else {
-        const response = await axios.post('/api/banners', data);
-        return response.data;
+        return await axios.post("http://localhost:5001/api/banners", formDataToSend, config).then((res) => res.data);
       }
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('banners');
-        toast.success(banner ? 'Banner updated successfully' : 'Banner created successfully');
+        queryClient.invalidateQueries("banners");
+        toast.success(banner ? "Banner updated successfully" : "Banner created successfully");
         onClose();
       },
-      onError: () => {
-        toast.error('Failed to save banner');
-      }
+      onError: (error: any) => {
+        toast.error(`Failed to save banner: ${error.response?.data?.details || error.message}`);
+      },
     }
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!imageFile && !banner?.imageUrl) {
+      toast.error("Please upload a banner image");
+      return;
+    }
     mutation.mutate(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-white rounded shadow">
       <div>
         <label className="block text-sm font-medium text-gray-700">Title</label>
         <input
@@ -83,7 +99,7 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
         />
       </div>
 
@@ -94,7 +110,7 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.targetUrl}
-          onChange={(e) => setFormData(prev => ({ ...prev, targetUrl: e.target.value }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, targetUrl: e.target.value }))}
         />
       </div>
 
@@ -104,7 +120,7 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.placement}
-          onChange={(e) => setFormData(prev => ({ ...prev, placement: e.target.value as Banner['placement'] }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, placement: e.target.value as Banner["placement"] }))}
         >
           <option value="homepage">Homepage</option>
           <option value="listing">Listing Page</option>
@@ -120,7 +136,7 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             value={formData.startDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))}
           />
         </div>
         <div>
@@ -130,9 +146,22 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             value={formData.endDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))}
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Status</label>
+        <select
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          value={formData.status}
+          onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as Banner["status"] }))}
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
       </div>
 
       <div>
@@ -150,6 +179,9 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
             <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
           </div>
         </div>
+        {formData.imageUrl && (
+          <img src={formData.imageUrl} alt="Preview" className="mt-2 max-w-xs rounded" />
+        )}
       </div>
 
       <div className="flex justify-end space-x-3">
@@ -163,8 +195,9 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
         <button
           type="submit"
           className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          disabled={mutation.isLoading}
         >
-          {banner ? 'Update Banner' : 'Create Banner'}
+          {mutation.isLoading ? "Saving..." : banner ? "Update Banner" : "Create Banner"}
         </button>
       </div>
     </form>

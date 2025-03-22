@@ -1,10 +1,11 @@
+// src/pages/AdminDashboard.tsx
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from "react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Edit } from "lucide-react";
 import PropertyForm from "../components/PropertyForm";
-
+import BannerForm from "../components/BannerForm";
 
 interface Property {
   id: string;
@@ -27,13 +28,26 @@ interface Company {
   whatsappNumber?: string;
 }
 
+interface Banner {
+  id: string;
+  title: string;
+  imageUrl: string;
+  targetUrl: string;
+  placement: "homepage" | "listing" | "search";
+  startDate: string;
+  endDate: string;
+  status: "active" | "inactive";
+}
+
 function AdminDashboard() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [showCompanyForm, setShowCompanyForm] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | undefined>(undefined); // Changed from null to undefined
+  const [showBannerForm, setShowBannerForm] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | undefined>(undefined);
+  const [editingBanner, setEditingBanner] = useState<Banner | undefined>(undefined);
   const [newCompany, setNewCompany] = useState({
     name: "",
     description: "",
@@ -49,7 +63,7 @@ function AdminDashboard() {
   });
 
   // Fetch properties
-  const { data: properties = [], isLoading, error } = useQuery<Property[]>(
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>(
     ["properties", selectedCompanyId],
     async () => {
       const url = selectedCompanyId
@@ -57,14 +71,20 @@ function AdminDashboard() {
         : "http://localhost:5001/api/properties";
       const response = await axios.get(url);
       return response.data;
-    },
-    {
-      onError: () => toast.error("Failed to load properties"),
+    }
+  );
+
+  // Fetch banners
+  const { data: banners = [], isLoading: bannersLoading } = useQuery<Banner[]>(
+    "banners",
+    async () => {
+      const response = await axios.get("http://localhost:5001/api/banners");
+      return response.data;
     }
   );
 
   // Create company mutation
-  const createCompany: UseMutationResult<Company, unknown, Omit<Company, "id">> = useMutation(
+  const createCompany = useMutation<Company, Error, Omit<Company, "id">>(
     async (company: Omit<Company, "id">) => {
       const response = await axios.post("http://localhost:5001/api/companies", company);
       return response.data;
@@ -76,14 +96,14 @@ function AdminDashboard() {
         setShowCompanyForm(false);
         setNewCompany({ name: "", description: "", logo: "", contactEmail: "", whatsappNumber: "" });
       },
-      onError: (error: unknown) => {
-        toast.error(`Failed to create company: ${String(error)}`);
+      onError: (error: Error) => {
+        toast.error(`Failed to create company: ${error.message}`);
       },
     }
   );
 
   // Delete property mutation
-  const deleteProperty: UseMutationResult<void, unknown, string> = useMutation(
+  const deleteProperty = useMutation<void, Error, string>(
     async (id: string) => {
       await axios.delete(`http://localhost:5001/api/properties/${id}`);
     },
@@ -92,8 +112,24 @@ function AdminDashboard() {
         queryClient.invalidateQueries("properties");
         toast.success("Property deleted successfully");
       },
-      onError: (error: unknown) => {
-        toast.error(`Failed to delete property: ${String(error)}`);
+      onError: (error: Error) => {
+        toast.error(`Failed to delete property: ${error.message}`);
+      },
+    }
+  );
+
+  // Delete banner mutation
+  const deleteBanner = useMutation<void, Error, string>(
+    async (id: string) => {
+      await axios.delete(`http://localhost:5001/api/banners/${id}`);
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("banners");
+        toast.success("Banner deleted successfully");
+      },
+      onError: (error: Error) => {
+        toast.error(`Failed to delete banner: ${error.message}`);
       },
     }
   );
@@ -109,11 +145,15 @@ function AdminDashboard() {
 
   const handlePropertyClose = () => {
     setShowPropertyForm(false);
-    setEditingProperty(undefined); // Changed from null to undefined
+    setEditingProperty(undefined);
   };
 
-  if (isLoading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">Error loading properties</div>;
+  const handleBannerClose = () => {
+    setShowBannerForm(false);
+    setEditingBanner(undefined);
+  };
+
+  if (propertiesLoading || bannersLoading) return <div className="p-4">Loading...</div>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -178,7 +218,66 @@ function AdminDashboard() {
         </form>
       )}
 
-      {/* Property Filters */}
+      {/* Banner Management */}
+      <h2 className="text-2xl font-semibold mb-4">Manage Banners</h2>
+      <button
+        onClick={() => setShowBannerForm(true)}
+        className="mb-4 bg-indigo-600 text-white px-4 py-2 rounded flex items-center"
+      >
+        <Plus className="w-5 h-5 mr-2" />
+        Add Banner
+      </button>
+
+      {(showBannerForm || editingBanner) && (
+        <BannerForm banner={editingBanner} onClose={handleBannerClose} />
+      )}
+
+      <div className="bg-white rounded shadow overflow-hidden mb-8">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Placement</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {banners.length > 0 ? (
+              banners.map((banner) => (
+                <tr key={banner.id}>
+                  <td className="px-6 py-4">{banner.title}</td>
+                  <td className="px-6 py-4">{banner.placement}</td>
+                  <td className="px-6 py-4">{banner.status}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => setEditingBanner(banner)}
+                      className="text-indigo-600 mr-4"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => deleteBanner.mutate(banner.id)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                  No banners found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Property Filters and List */}
+      <h2 className="text-2xl font-semibold mb-4">Manage Properties</h2>
       <div className="mb-6 flex space-x-4">
         <input
           type="text"
@@ -201,7 +300,6 @@ function AdminDashboard() {
         </select>
       </div>
 
-      {/* Add Property Button */}
       <button
         onClick={() => setShowPropertyForm(true)}
         className="mb-4 bg-indigo-600 text-white px-4 py-2 rounded flex items-center"
@@ -210,12 +308,8 @@ function AdminDashboard() {
         Add Property
       </button>
 
-      {/* Property Form */}
-      {(showPropertyForm || editingProperty) && (
-        <PropertyForm property={editingProperty} onClose={handlePropertyClose} />
-      )}
+      {showPropertyForm && <PropertyForm property={editingProperty} onClose={handlePropertyClose} />}
 
-      {/* Property List */}
       <div className="bg-white rounded shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">

@@ -1,6 +1,4 @@
-// import { DataTypes } from 'sequelize';
-// import sequelize from '../config/database.js';
-
+// backend/models/WhatsAppInquiry.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.js');
 

@@ -1,23 +1,9 @@
-// frontend/src/pages/HomePage.tsx
+// src/pages/HomePage.tsx
 import React from "react";
 import { Building2, MapPin, DollarSign } from "lucide-react";
+import BannerRotator from "../components/BannerRotator";
 
-interface Banner {
-  id?: string;
-  title: string;
-  imageUrl: string;
-  targetUrl: string;
-  placement: "homepage" | "listing" | "search";
-  startDate: string;
-  endDate: string;
-  status: "active" | "inactive";
-}
-
-interface HomePageProps {
-  banners: Banner[];
-}
-
-function HomePage({ banners }: HomePageProps) {
+function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -41,38 +27,7 @@ function HomePage({ banners }: HomePageProps) {
       </div>
 
       {/* Banner Section */}
-      {banners.length > 0 && (
-        <div className="py-8 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Featured Banners
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {banners
-                .filter(
-                  (banner) =>
-                    banner.placement === "homepage" &&
-                    banner.status === "active"
-                )
-                .map((banner) => (
-                  <a
-                    key={banner.id}
-                    href={banner.targetUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <img
-                      src={banner.imageUrl}
-                      alt={banner.title}
-                      className="w-full h-48 object-cover rounded-lg hover:opacity-90 transition-opacity"
-                    />
-                  </a>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <BannerRotator placement="homepage" />
 
       {/* Features Section */}
       <div className="py-12 bg-white">
