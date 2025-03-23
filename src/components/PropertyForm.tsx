@@ -1,4 +1,3 @@
-// frontend/src/components/PropertyForm.tsx
 import React, { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "react-query";
 import axios from "axios";
@@ -30,22 +29,27 @@ interface Company {
 
 function PropertyForm({ property, onClose }: PropertyFormProps) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<Property>(property || {
-    title: "",
-    price: 0,
-    location: "",
-    description: "",
-    companyId: "",
-    tier: "standard",
-    status: "active",
-    imageUrl: "",
-  });
+  const [formData, setFormData] = useState<Property>(
+    property || {
+      title: "",
+      price: 0,
+      location: "",
+      description: "",
+      companyId: "",
+      tier: "standard",
+      status: "active",
+      imageUrl: "",
+    }
+  );
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const { data: companies = [] } = useQuery<Company[]>("companies", async () => {
-    const response = await axios.get("http://localhost:5001/api/companies");
-    return response.data;
-  });
+  const { data: companies = [] } = useQuery<Company[]>(
+    "companies",
+    async () => {
+      const response = await axios.get("http://localhost:5001/api/companies");
+      return response.data;
+    }
+  );
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [".jpeg", ".jpg", ".png"] },
@@ -56,14 +60,14 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
         ...prev,
         imageUrl: URL.createObjectURL(acceptedFiles[0]),
       }));
-      console.log('Image selected:', acceptedFiles[0]);
+      console.log("Image selected:", acceptedFiles[0]);
     },
   });
 
   const mutation = useMutation(
     async (data: Property) => {
       const formDataToSend = new FormData();
-      
+
       formDataToSend.append("title", data.title);
       formDataToSend.append("description", data.description);
       formDataToSend.append("price", data.price.toString());
@@ -74,9 +78,9 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
 
       if (imageFile) {
         formDataToSend.append("image", imageFile);
-        console.log('Sending image:', imageFile);
+        console.log("Sending image:", imageFile);
       } else {
-        console.log('No image to send');
+        console.log("No image to send");
       }
 
       const config = {
@@ -84,29 +88,35 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
       };
 
       if (property?.id) {
-        return await axios.put(
-          `http://localhost:5001/api/properties/${property.id}`,
-          formDataToSend,
-          config
-        ).then((res) => res.data);
+        return await axios
+          .put(
+            `http://localhost:5001/api/properties/${property.id}`,
+            formDataToSend,
+            config
+          )
+          .then((res) => res.data);
       } else {
-        return await axios.post(
-          "http://localhost:5001/api/properties",
-          formDataToSend,
-          config
-        ).then((res) => res.data);
+        return await axios
+          .post("http://localhost:5001/api/properties", formDataToSend, config)
+          .then((res) => res.data);
       }
     },
     {
       onSuccess: () => {
         queryClient.invalidateQueries("properties");
-        toast.success(property ? "Property updated successfully" : "Property created successfully");
+        toast.success(
+          property
+            ? "Property updated successfully"
+            : "Property created successfully"
+        );
         onClose();
       },
       onError: (error: any) => {
         console.error("Mutation error:", error);
         toast.error(
-          `Failed to save property: ${error.response?.data?.details || error.message || "Unknown error"}`
+          `Failed to save property: ${
+            error.response?.data?.details || error.message || "Unknown error"
+          }`
         );
       },
     }
@@ -118,20 +128,26 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
       toast.error("Please select a company");
       return;
     }
-    console.log('Submitting form with data:', formData);
+    console.log("Submitting form with data:", formData);
     mutation.mutate(formData);
   };
 
-  // JSX remains unchanged
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-white rounded shadow">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 p-4 bg-white rounded shadow"
+    >
       <div>
-        <label className="block text-sm font-medium text-gray-700">Company</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Company
+        </label>
         <select
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.companyId}
-          onChange={(e) => setFormData((prev) => ({ ...prev, companyId: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, companyId: e.target.value }))
+          }
         >
           <option value="">Select a company</option>
           {companies.map((company) => (
@@ -149,7 +165,9 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.title}
-          onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, title: e.target.value }))
+          }
         />
       </div>
 
@@ -160,29 +178,39 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.price}
-          onChange={(e) => setFormData((prev) => ({ ...prev, price: Number(e.target.value) }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, price: Number(e.target.value) }))
+          }
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Location</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Location
+        </label>
         <input
           type="text"
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.location}
-          onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, location: e.target.value }))
+          }
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Description</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Description
+        </label>
         <textarea
           required
           rows={4}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
         />
       </div>
 
@@ -192,7 +220,12 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.tier}
-          onChange={(e) => setFormData((prev) => ({ ...prev, tier: e.target.value as Property["tier"] }))}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              tier: e.target.value as Property["tier"],
+            }))
+          }
         >
           <option value="standard">Standard</option>
           <option value="featured">Featured</option>
@@ -201,12 +234,19 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Status</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Status
+        </label>
         <select
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           value={formData.status}
-          onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as Property["status"] }))}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              status: e.target.value as Property["status"],
+            }))
+          }
         >
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
@@ -215,7 +255,9 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Property Image</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Property Image
+        </label>
         <div
           {...getRootProps()}
           className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-500"
@@ -230,7 +272,11 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
           </div>
         </div>
         {formData.imageUrl && (
-          <img src={formData.imageUrl} alt="Preview" className="mt-2 max-w-xs rounded" />
+          <img
+            src={formData.imageUrl}
+            alt="Preview"
+            className="mt-2 max-w-xs rounded"
+          />
         )}
       </div>
 
@@ -247,7 +293,11 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
           className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           disabled={mutation.isLoading}
         >
-          {mutation.isLoading ? "Saving..." : property ? "Update Property" : "Create Property"}
+          {mutation.isLoading
+            ? "Saving..."
+            : property
+            ? "Update Property"
+            : "Create Property"}
         </button>
       </div>
     </form>

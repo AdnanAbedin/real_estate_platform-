@@ -1,4 +1,3 @@
-// backend/routes/properties.js
 const express = require('express');
 const router = express.Router();
 const Property = require('../models/Property');
@@ -6,10 +5,9 @@ const { Sequelize } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const sharp = require('sharp'); // Add sharp for image processing
-const { bucket } = require('../config/firebase');
+const sharp = require('sharp');
+const { bucket, admin } = require('../config/firebase'); 
 
-// Configure multer with disk storage
 const storage = multer.diskStorage({
   destination: './uploads/',
   filename: (req, file, cb) => {
@@ -18,7 +16,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Helper function to upload to Firebase with size reduction
 async function uploadToFirebase(file) {
   try {
     if (!file || !file.path) {
@@ -28,28 +25,20 @@ async function uploadToFirebase(file) {
     const fileName = `properties/${Date.now()}_${file.originalname}`;
     const fileUpload = bucket.file(fileName);
 
-    console.log('Uploading file to Firebase:', fileName);
-    console.log('Target bucket:', bucket.name);
-
-    // Read the original file
     const originalBuffer = await fs.readFile(file.path);
-
-    // Use sharp to resize and compress the image
     const compressedBuffer = await sharp(originalBuffer)
       .resize({
-        width: 800, // Resize to a reasonable width (adjust as needed)
+        width: 800,
         height: 800,
-        fit: 'inside', // Maintain aspect ratio, fit within 800x800
-        withoutEnlargement: true, // Don’t upscale smaller images
+        fit: 'inside',
+        withoutEnlargement: true,
       })
-      .png({ quality: 80 }) // Compress PNG (adjust quality as needed)
+      .png({ quality: 80 })
       .toBuffer();
 
-    // Check the size (400KB = 400 * 1024 bytes)
-    const maxSize = 400 * 1024; // 400KB in bytes
+    const maxSize = 400 * 1024;
     if (compressedBuffer.length > maxSize) {
       console.warn('Compressed image still exceeds 400KB, further reducing quality');
-      // Further reduce quality if still too large
       const furtherCompressedBuffer = await sharp(originalBuffer)
         .resize({
           width: 800,
@@ -57,35 +46,25 @@ async function uploadToFirebase(file) {
           fit: 'inside',
           withoutEnlargement: true,
         })
-        .png({ quality: 50 }) // Lower quality to ensure size < 400KB
+        .png({ quality: 50 })
         .toBuffer();
 
       if (furtherCompressedBuffer.length > maxSize) {
         throw new Error('Unable to compress image below 400KB');
       }
       await fileUpload.save(furtherCompressedBuffer, {
-        metadata: {
-          contentType: file.mimetype,
-        },
+        metadata: { contentType: file.mimetype },
         public: true,
       });
     } else {
       await fileUpload.save(compressedBuffer, {
-        metadata: {
-          contentType: file.mimetype,
-        },
+        metadata: { contentType: file.mimetype },
         public: true,
       });
     }
 
-    // Use the public URL
     const url = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-    console.log('File uploaded successfully, URL:', url);
-    console.log('Uploaded file size:', compressedBuffer.length / 1024, 'KB');
-
-    // Clean up local file
     await fs.unlink(file.path).catch(err => console.error('Failed to delete local file:', err));
-
     return url;
   } catch (error) {
     console.error('Firebase upload failed:', error);
@@ -94,24 +73,21 @@ async function uploadToFirebase(file) {
 }
 
 router.post('/', upload.single('image'), async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
     const { title, description, price, location, companyId, tier, status } = req.body;
 
-    console.log('Request body:', req.body);
-    console.log('File received:', req.file);
-
     if (!companyId) {
+      await transaction.rollback();
       return res.status(400).json({ error: 'companyId is required' });
     }
 
     let imageUrl = '';
     if (req.file) {
       imageUrl = await uploadToFirebase(req.file);
-    } else {
-      console.log('No image file provided');
     }
 
-    const property = await Property.create({
+    const propertyData = {
       title,
       description,
       price: parseFloat(price),
@@ -120,10 +96,22 @@ router.post('/', upload.single('image'), async (req, res) => {
       tier: tier || 'standard',
       status: status || 'active',
       imageUrl,
+    };
+
+    const property = await Property.create(propertyData, { transaction });
+
+    await admin.database().ref('properties').child(property.id).set({
+      ...propertyData,
+      id: property.id,
+      createdAt: admin.database.ServerValue.TIMESTAMP,
+      updatedAt: admin.database.ServerValue.TIMESTAMP,
+      isDeleted: false,
     });
 
+    await transaction.commit();
     res.status(201).json(property);
   } catch (error) {
+    await transaction.rollback();
     console.error('Error creating property:', error);
     res.status(500).json({
       error: 'Failed to create property',
@@ -131,7 +119,6 @@ router.post('/', upload.single('image'), async (req, res) => {
     });
   }
 });
-
 
 router.get('/', async (req, res) => {
   const { companyId, search, minPrice, maxPrice, tier } = req.query;
@@ -159,7 +146,7 @@ router.get('/', async (req, res) => {
     const properties = await Property.findAll({
       where,
       order: [['tier', 'DESC'], ['price', 'ASC']],
-      limit: 20, // Add pagination
+      limit: 20,
       offset: req.query.offset ? parseInt(req.query.offset) : 0,
     });
     res.json(properties);
@@ -170,9 +157,11 @@ router.get('/', async (req, res) => {
 });
 
 router.put('/:id', upload.single('image'), async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
     const property = await Property.findByPk(req.params.id);
     if (!property) {
+      await transaction.rollback();
       return res.status(404).json({ error: 'Property not found' });
     }
 
@@ -185,11 +174,22 @@ router.put('/:id', upload.single('image'), async (req, res) => {
       ...req.body,
       price: parseFloat(req.body.price),
       imageUrl,
+      updatedAt: new Date(), 
     };
 
-    await property.update(updateData);
+    await property.update(updateData, { transaction });
+
+    // Sync with Firebase Realtime Database
+    await admin.database().ref('properties').child(property.id).update({
+      ...updateData,
+      id: property.id,
+      updatedAt: admin.database.ServerValue.TIMESTAMP,
+    });
+
+    await transaction.commit();
     res.json(property);
   } catch (error) {
+    await transaction.rollback();
     console.error('Error updating property:', error);
     res.status(500).json({ error: 'Failed to update property', details: error.message });
   }
@@ -209,5 +209,25 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router; // Default export is the router
-module.exports.uploadToFirebase = uploadToFirebase; // Named export for the function
+router.get('/:id', async (req, res) => {
+  try {
+    const property = await Property.findOne({
+      where: {
+        id: req.params.id,
+        isDeleted: false, 
+      },
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    res.json(property);
+  } catch (error) {
+    console.error('Error fetching property by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch property', details: error.message });
+  }
+});
+
+module.exports = router;
+module.exports.uploadToFirebase = uploadToFirebase;

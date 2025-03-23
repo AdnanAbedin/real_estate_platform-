@@ -20,7 +20,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/properties" element={<PropertyListingPage />} />
-            <Route path="/property/:id" element={<PropertyDetailPage />} />
+            <Route path="/properties/:id" element={<PropertyDetailPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
           <Toaster position="top-right" />

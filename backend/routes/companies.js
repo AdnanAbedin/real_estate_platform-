@@ -1,6 +1,78 @@
 const express = require('express');
 const router = express.Router();
 const Company = require('../models/Company');
+const { admin } = require('../config/firebase'); 
+const sequelize = require('../config/database'); 
+
+router.post('/', async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { name, description, logo, contactEmail, whatsappNumber } = req.body;
+    if (!name || !contactEmail) {
+      await transaction.rollback();
+      return res.status(400).json({ error: 'name and contactEmail are required' });
+    }
+
+    const companyData = {
+      name,
+      description,
+      logo,
+      contactEmail,
+      whatsappNumber,
+    };
+
+    const company = await Company.create(companyData, { transaction });
+
+    // Sync with Firebase Realtime Database
+    await admin.database().ref('companies').child(company.id).set({
+      ...companyData,
+      id: company.id,
+      status: 'active',
+      createdAt: admin.database.ServerValue.TIMESTAMP,
+      updatedAt: admin.database.ServerValue.TIMESTAMP,
+      isDeleted: false,
+    });
+
+    await transaction.commit();
+    res.status(201).json(company);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error creating company:', error);
+    res.status(500).json({ error: 'Failed to create company', details: error.message });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const company = await Company.findByPk(req.params.id);
+    if (!company) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date(), 
+    };
+
+    await company.update(updateData, { transaction });
+
+    // Sync with Firebase Realtime Database
+    await admin.database().ref('companies').child(company.id).update({
+      ...updateData,
+      id: company.id,
+      updatedAt: admin.database.ServerValue.TIMESTAMP,
+    });
+
+    await transaction.commit();
+    res.json(company);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error updating company:', error);
+    res.status(500).json({ error: 'Failed to update company', details: error.message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -22,26 +94,6 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching company:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
-  }
-});
-
-router.post('/', async (req, res) => {
-  try {
-    const { name, description, logo, contactEmail, whatsappNumber } = req.body;
-    if (!name || !contactEmail) {
-      return res.status(400).json({ error: 'name and contactEmail are required' });
-    }
-    const company = await Company.create({
-      name,
-      description,
-      logo,
-      contactEmail,
-      whatsappNumber,
-    });
-    res.status(201).json(company);
-  } catch (error) {
-    console.error('Error creating company:', error);
-    res.status(500).json({ error: 'Failed to create company', details: error.message });
   }
 });
 

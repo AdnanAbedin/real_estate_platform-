@@ -1,12 +1,11 @@
-// src/pages/AdminDashboard.tsx
 import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient, UseMutationResult } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Edit } from "lucide-react";
 import PropertyForm from "../components/PropertyForm";
 import BannerForm from "../components/BannerForm";
-import AgentProfile from '../components/AgentProfile';
+import AgentProfile from "../components/AgentProfile";
 
 interface Property {
   id: string;
@@ -47,8 +46,12 @@ function AdminDashboard() {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [showCompanyForm, setShowCompanyForm] = useState(false);
   const [showBannerForm, setShowBannerForm] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | undefined>(undefined);
-  const [editingBanner, setEditingBanner] = useState<Banner | undefined>(undefined);
+  const [editingProperty, setEditingProperty] = useState<Property | undefined>(
+    undefined
+  );
+  const [editingBanner, setEditingBanner] = useState<Banner | undefined>(
+    undefined
+  );
   const [newCompany, setNewCompany] = useState({
     name: "",
     description: "",
@@ -57,25 +60,24 @@ function AdminDashboard() {
     whatsappNumber: "",
   });
 
-  // Fetch companies
-  const { data: companies = [] } = useQuery<Company[]>("companies", async () => {
-    const response = await axios.get("http://localhost:5001/api/companies");
-    return response.data;
-  });
-
-  // Fetch properties
-  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>(
-    ["properties", selectedCompanyId],
+  const { data: companies = [] } = useQuery<Company[]>(
+    "companies",
     async () => {
-      const url = selectedCompanyId
-        ? `http://localhost:5001/api/properties?companyId=${selectedCompanyId}`
-        : "http://localhost:5001/api/properties";
-      const response = await axios.get(url);
+      const response = await axios.get("http://localhost:5001/api/companies");
       return response.data;
     }
   );
 
-  // Fetch banners
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery<
+    Property[]
+  >(["properties", selectedCompanyId], async () => {
+    const url = selectedCompanyId
+      ? `http://localhost:5001/api/properties?companyId=${selectedCompanyId}`
+      : "http://localhost:5001/api/properties";
+    const response = await axios.get(url);
+    return response.data;
+  });
+
   const { data: banners = [], isLoading: bannersLoading } = useQuery<Banner[]>(
     "banners",
     async () => {
@@ -84,10 +86,12 @@ function AdminDashboard() {
     }
   );
 
-  // Create company mutation
   const createCompany = useMutation<Company, Error, Omit<Company, "id">>(
     async (company: Omit<Company, "id">) => {
-      const response = await axios.post("http://localhost:5001/api/companies", company);
+      const response = await axios.post(
+        "http://localhost:5001/api/companies",
+        company
+      );
       return response.data;
     },
     {
@@ -95,7 +99,13 @@ function AdminDashboard() {
         queryClient.invalidateQueries("companies");
         toast.success("Company created successfully");
         setShowCompanyForm(false);
-        setNewCompany({ name: "", description: "", logo: "", contactEmail: "", whatsappNumber: "" });
+        setNewCompany({
+          name: "",
+          description: "",
+          logo: "",
+          contactEmail: "",
+          whatsappNumber: "",
+        });
       },
       onError: (error: Error) => {
         toast.error(`Failed to create company: ${error.message}`);
@@ -103,7 +113,6 @@ function AdminDashboard() {
     }
   );
 
-  // Delete property mutation
   const deleteProperty = useMutation<void, Error, string>(
     async (id: string) => {
       await axios.delete(`http://localhost:5001/api/properties/${id}`);
@@ -119,7 +128,6 @@ function AdminDashboard() {
     }
   );
 
-  // Delete banner mutation
   const deleteBanner = useMutation<void, Error, string>(
     async (id: string) => {
       await axios.delete(`http://localhost:5001/api/banners/${id}`);
@@ -154,7 +162,8 @@ function AdminDashboard() {
     setEditingBanner(undefined);
   };
 
-  if (propertiesLoading || bannersLoading) return <div className="p-4">Loading...</div>;
+  if (propertiesLoading || bannersLoading)
+    return <div className="p-4">Loading...</div>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -170,13 +179,18 @@ function AdminDashboard() {
       </button>
 
       {showCompanyForm && (
-        <form onSubmit={handleCompanySubmit} className="mb-8 p-4 bg-white rounded shadow">
+        <form
+          onSubmit={handleCompanySubmit}
+          className="mb-8 p-4 bg-white rounded shadow"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Company Name"
               value={newCompany.name}
-              onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+              onChange={(e) =>
+                setNewCompany({ ...newCompany, name: e.target.value })
+              }
               className="p-2 border rounded"
               required
             />
@@ -184,7 +198,9 @@ function AdminDashboard() {
               type="email"
               placeholder="Contact Email"
               value={newCompany.contactEmail}
-              onChange={(e) => setNewCompany({ ...newCompany, contactEmail: e.target.value })}
+              onChange={(e) =>
+                setNewCompany({ ...newCompany, contactEmail: e.target.value })
+              }
               className="p-2 border rounded"
               required
             />
@@ -192,21 +208,27 @@ function AdminDashboard() {
               type="text"
               placeholder="Logo URL (optional)"
               value={newCompany.logo}
-              onChange={(e) => setNewCompany({ ...newCompany, logo: e.target.value })}
+              onChange={(e) =>
+                setNewCompany({ ...newCompany, logo: e.target.value })
+              }
               className="p-2 border rounded"
             />
             <input
               type="text"
               placeholder="WhatsApp Number (optional)"
               value={newCompany.whatsappNumber}
-              onChange={(e) => setNewCompany({ ...newCompany, whatsappNumber: e.target.value })}
+              onChange={(e) =>
+                setNewCompany({ ...newCompany, whatsappNumber: e.target.value })
+              }
               className="p-2 border rounded"
             />
           </div>
           <textarea
             placeholder="Description (optional)"
             value={newCompany.description}
-            onChange={(e) => setNewCompany({ ...newCompany, description: e.target.value })}
+            onChange={(e) =>
+              setNewCompany({ ...newCompany, description: e.target.value })
+            }
             className="mt-4 p-2 border rounded w-full"
           />
           <button
@@ -218,15 +240,14 @@ function AdminDashboard() {
           </button>
         </form>
       )}
-  
 
-     {/* Add Agent Stats Section */}
-    <h2 className="text-2xl font-semibold mb-4">Agent Performance</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      {companies.map((company) => (
-        <AgentProfile key={company.id} companyId={company.id} />
-      ))}
-    </div>
+      {/* Add Agent Stats Section */}
+      <h2 className="text-2xl font-semibold mb-4">Agent Performance</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {companies.map((company) => (
+          <AgentProfile key={company.id} companyId={company.id} />
+        ))}
+      </div>
 
       {/* Banner Management */}
       <h2 className="text-2xl font-semibold mb-4">Manage Banners</h2>
@@ -246,10 +267,18 @@ function AdminDashboard() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Placement</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Title
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Placement
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Status
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -318,18 +347,35 @@ function AdminDashboard() {
         Add Property
       </button>
 
-      {showPropertyForm && <PropertyForm property={editingProperty} onClose={handlePropertyClose} />}
+      {showPropertyForm && (
+        <PropertyForm
+          property={editingProperty}
+          onClose={handlePropertyClose}
+        />
+      )}
 
       <div className="bg-white rounded shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Title
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Location
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Price
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Tier
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Status
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -338,19 +384,21 @@ function AdminDashboard() {
                 <tr key={property.id}>
                   <td className="px-6 py-4">{property.title}</td>
                   <td className="px-6 py-4">{property.location}</td>
-                  <td className="px-6 py-4">${property.price.toLocaleString()}</td>
+                  <td className="px-6 py-4">
+                    ${property.price.toLocaleString()}
+                  </td>
                   <td className="px-6 py-4">{property.tier}</td>
                   <td className="px-6 py-4">{property.status}</td>
                   <td className="px-6 py-4 text-right">
-                  <button
-  onClick={() => {
-    setEditingProperty(property);
-    setShowPropertyForm(true); // Ensure the form is opened
-  }}
-  className="text-indigo-600 mr-4"
->
-  <Edit className="w-5 h-5" />
-</button>
+                    <button
+                      onClick={() => {
+                        setEditingProperty(property);
+                        setShowPropertyForm(true);
+                      }}
+                      className="text-indigo-600 mr-4"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
 
                     <button
                       onClick={() => deleteProperty.mutate(property.id)}

@@ -5,12 +5,12 @@ const router = express.Router();
 const WhatsAppInquiry = require('../models/WhatsAppInquiry');
 const { bucket } = require('../config/firebase');
 const admin = require('firebase-admin');
-const sequelize = require('../config/database'); // Ensure correct path to your Sequelize instance
+const sequelize = require('../config/database'); 
 
 router.post('/', async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    console.log('Request body:', req.body); // Log the incoming request body for debugging
+    console.log('Request body:', req.body); 
 
     const { propertyId, companyId, customerPhone, message } = req.body;
 
@@ -28,7 +28,6 @@ router.post('/', async (req, res) => {
       status: 'pending',
     }, { transaction });
 
-    // Sync with Firebase (we'll fix this next)
     await admin.database().ref('whatsapp_inquiries').child(inquiry.id).set({
       propertyId,
       companyId,
@@ -100,7 +99,7 @@ router.get('/stats/:companyId', async (req, res) => {
         companyId: req.params.companyId,
         status: 'responded',
       },
-      attributes: ['id', 'responseTime'], // Explicitly list only columns that exist
+      attributes: ['id', 'responseTime'], 
     });
 
     const stats = {

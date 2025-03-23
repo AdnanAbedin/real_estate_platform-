@@ -1,4 +1,3 @@
-// backend/models/WhatsAppInquiry.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.js');
 const Property = require('./Property');
