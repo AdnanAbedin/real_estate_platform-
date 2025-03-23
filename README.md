@@ -15,6 +15,12 @@ A full-stack real estate platform with advanced features and Firebase sync.
 3. Backend: `cd backend && npm run dev`
 4. Frontend: `npm run dev`
 
+## WhatsApp Inquiry Check
+1. Navigate to the Properties page and select a property.
+2. In the "Contact Agent via WhatsApp" section, enter a phone number and send a message.
+3. On the Admin page, go to "Agent Performance," view pending messages, select one, and send a response.  
+   - All data is stored in PostgreSQL and synced with Firebase.
+
 ## Tech Stack
 - Backend: Node.js, PostgreSQL, Firebase
 - Frontend: React.js
