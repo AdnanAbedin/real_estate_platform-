@@ -20,6 +20,9 @@ A full-stack real estate platform with advanced features and Firebase sync.
 2. In the "Contact Agent via WhatsApp" section, enter a phone number and send a message.
 3. On the Admin page, go to "Agent Performance," view pending messages, select one, and send a response.  
    - All data is stored in PostgreSQL and synced with Firebase.
+  
+## Demo
+- WhatsApp Feature: [Demo Video](https://drive.google.com/drive/folders/1fQLeb8D1ah_TqQmCFl7UDJ3XcQNpt8mM?usp=sharing)
 
 ## Tech Stack
 - Backend: Node.js, PostgreSQL, Firebase
