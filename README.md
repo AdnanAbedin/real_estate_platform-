@@ -10,9 +10,10 @@ A full-stack real estate platform with advanced features and Firebase sync.
 - Fixed price update bug (consistent PostgreSQL & Firebase sync)
 
 ## Setup
-1. Install dependencies: `npm install`
-2. Backend: `cd backend && npm run dev`
-3. Frontend: `npm run dev`
+1. Clone the repo: `git clone https://github.com/AdnanAbedin/real_estate_platform-.git`
+2. Install dependencies: `npm install`
+3. Backend: `cd backend && npm run dev`
+4. Frontend: `npm run dev`
 
 ## Tech Stack
 - Backend: Node.js, PostgreSQL, Firebase
