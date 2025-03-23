@@ -119,4 +119,20 @@ router.get('/stats/:companyId', async (req, res) => {
   }
 });
 
+router.get('/:companyId/inquiries', async (req, res) => {
+  try {
+    const inquiries = await WhatsAppInquiry.findAll({
+      where: { 
+        companyId: req.params.companyId 
+      },
+      order: [['createdAt', 'DESC']], // Latest first
+    });
+    
+    res.json(inquiries);
+  } catch (error) {
+    console.error('Error fetching WhatsApp inquiries:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 module.exports = router;

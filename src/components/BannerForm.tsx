@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -23,18 +23,57 @@ interface Banner {
 
 function BannerForm({ banner, onClose }: BannerFormProps) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<Banner>(
-    banner || {
+
+  // Calculate default dates for new banners
+  const getDefaultDates = () => {
+    const today = new Date();
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+
+    return {
+      startDate: today.toISOString().split("T")[0],
+      endDate: thirtyDaysLater.toISOString().split("T")[0],
+    };
+  };
+
+  // Format date to YYYY-MM-DD if needed
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toISOString().split("T")[0];
+  };
+
+  const [formData, setFormData] = useState<Banner>(() => {
+    if (banner) {
+      return {
+        ...banner,
+        startDate: formatDate(banner.startDate),
+        endDate: formatDate(banner.endDate),
+      };
+    }
+    const { startDate, endDate } = getDefaultDates();
+    return {
       title: "",
       imageUrl: "",
       targetUrl: "",
       placement: "homepage",
-      startDate: new Date().toISOString().split("T")[0],
-      endDate: new Date().toISOString().split("T")[0],
+      startDate,
+      endDate,
       status: "active",
-    }
-  );
+    };
+  });
+
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Update formData when banner prop changes
+  useEffect(() => {
+    if (banner) {
+      setFormData({
+        ...banner,
+        startDate: formatDate(banner.startDate),
+        endDate: formatDate(banner.endDate),
+      });
+    }
+  }, [banner]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [".jpeg", ".jpg", ".png"] },

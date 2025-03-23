@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery } from "react-query";
 import axios from "axios";
 import { Clock, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AgentProfileProps {
   companyId: string;
@@ -13,7 +14,8 @@ interface Company {
 }
 
 function AgentProfile({ companyId }: AgentProfileProps) {
-  // Fetch WhatsApp stats
+  const navigate = useNavigate();
+
   const { data: stats, isLoading: statsLoading } = useQuery(
     ["whatsappStats", companyId],
     async () => {
@@ -24,7 +26,6 @@ function AgentProfile({ companyId }: AgentProfileProps) {
     }
   );
 
-  // Fetch company details
   const { data: company, isLoading: companyLoading } = useQuery(
     ["company", companyId],
     async () => {
@@ -35,10 +36,17 @@ function AgentProfile({ companyId }: AgentProfileProps) {
     }
   );
 
+  const handleClick = () => {
+    navigate(`/company/${companyId}/inquiries`);
+  };
+
   if (statsLoading || companyLoading) return <div>Loading stats...</div>;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div
+      className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleClick}
+    >
       <h3 className="text-lg font-semibold mb-4">
         {company?.name ? `${company.name} Statistics` : "Company Statistics"}
       </h3>

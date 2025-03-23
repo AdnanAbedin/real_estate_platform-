@@ -51,17 +51,32 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
 
+    const { name, description, logo, contactEmail, whatsappNumber } = req.body;
+    
+    // Validation
+    if (!name || !contactEmail) {
+      await transaction.rollback();
+      return res.status(400).json({ error: 'name and contactEmail are required' });
+    }
+
     const updateData = {
-      ...req.body,
-      updatedAt: new Date(), 
+      name,
+      description: description || null,
+      logo: logo || null,
+      contactEmail,
+      whatsappNumber: whatsappNumber || null,
+      updatedAt: new Date(),
     };
 
     await company.update(updateData, { transaction });
 
     // Sync with Firebase Realtime Database
     await admin.database().ref('companies').child(company.id).update({
-      ...updateData,
-      id: company.id,
+      name,
+      description: description || null,
+      logo: logo || null,
+      contactEmail,
+      whatsappNumber: whatsappNumber || null,
       updatedAt: admin.database.ServerValue.TIMESTAMP,
     });
 

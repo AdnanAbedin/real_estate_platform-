@@ -7,6 +7,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const sharp = require('sharp');
 const { bucket, admin } = require('../config/firebase'); 
+const sequelize = require('../config/database'); 
+
 
 const storage = multer.diskStorage({
   destination: './uploads/',

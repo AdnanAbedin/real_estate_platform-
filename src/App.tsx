@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import PropertyListingPage from "./pages/PropertyListingPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import CompanyInquiries from "./components/CompanyInquiries";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,10 @@ function App() {
             <Route path="/properties" element={<PropertyListingPage />} />
             <Route path="/properties/:id" element={<PropertyDetailPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route
+              path="/company/:companyId/inquiries"
+              element={<CompanyInquiries />}
+            />
           </Routes>
           <Toaster position="top-right" />
         </div>
