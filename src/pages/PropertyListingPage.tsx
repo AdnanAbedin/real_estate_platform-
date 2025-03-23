@@ -26,6 +26,8 @@ interface Company {
   whatsappNumber?: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function PropertyListingPage() {
   const [companyId, setCompanyId] = useState<string>("");
   const [search, setSearch] = useState<string>("");
@@ -51,7 +53,7 @@ function PropertyListingPage() {
       if (search) queryParams.append("search", search);
       if (tier) queryParams.append("tier", tier);
 
-      const url = `http://localhost:5001/api/properties${
+      const url = `${API_URL}/properties${
         queryParams.toString() ? "?" + queryParams.toString() : ""
       }`;
       const response = await axios.get(url);
@@ -62,7 +64,7 @@ function PropertyListingPage() {
   const { data: companies = [], isLoading: companiesLoading } = useQuery<
     Company[]
   >("companies", async () => {
-    const response = await axios.get("http://localhost:5001/api/companies");
+    const response = await axios.get(`${API_URL}/companies`);
     return response.data;
   });
 

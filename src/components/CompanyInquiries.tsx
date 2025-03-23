@@ -30,6 +30,8 @@ interface Company {
   name: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function CompanyInquiries() {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ function CompanyInquiries() {
     ["companyInquiries", companyId],
     async () => {
       const response = await axios.get(
-        `http://localhost:5001/api/whatsapp/${companyId}/inquiries`
+        `${API_URL}/whatsapp/${companyId}/inquiries`
       );
       return response.data;
     }
@@ -54,7 +56,7 @@ function CompanyInquiries() {
     ["company", companyId],
     async () => {
       const response = await axios.get(
-        `http://localhost:5001/api/companies/${companyId}`
+        `${API_URL}/companies/${companyId}`
       );
       return response.data;
     }
@@ -63,7 +65,7 @@ function CompanyInquiries() {
   const respondMutation = useMutation(
     (data: { inquiryId: string; responseMessage: string }) =>
       axios.post(
-        `http://localhost:5001/api/whatsapp/${data.inquiryId}/respond`,
+        `${API_URL}/whatsapp/${data.inquiryId}/respond`,
         {
           responseMessage: data.responseMessage,
           agentId: null, // Explicitly set to null

@@ -1,4 +1,3 @@
-// src/pages/HomePage.tsx
 import React from "react";
 import { Building2, MapPin, DollarSign } from "lucide-react";
 import BannerRotator from "../components/BannerRotator";

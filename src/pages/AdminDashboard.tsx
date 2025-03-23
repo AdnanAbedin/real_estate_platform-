@@ -48,6 +48,8 @@ interface Banner {
   status: "active" | "inactive";
 }
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AdminDashboard() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,7 +83,7 @@ function AdminDashboard() {
   const { data: companies = [] } = useQuery<Company[]>(
     "companies",
     async () => {
-      const response = await axios.get("http://localhost:5001/api/companies");
+      const response = await axios.get(`${API_URL}/companies`);
       return response.data;
     }
   );
@@ -90,8 +92,8 @@ function AdminDashboard() {
     Property[]
   >(["properties", selectedCompanyId], async () => {
     const url = selectedCompanyId
-      ? `http://localhost:5001/api/properties?companyId=${selectedCompanyId}`
-      : "http://localhost:5001/api/properties";
+      ? `${API_URL}/properties?companyId=${selectedCompanyId}`
+      : `${API_URL}/properties`;
     const response = await axios.get(url);
     return response.data;
   });
@@ -99,7 +101,7 @@ function AdminDashboard() {
   const { data: banners = [], isLoading: bannersLoading } = useQuery<Banner[]>(
     "banners",
     async () => {
-      const response = await axios.get("http://localhost:5001/api/banners");
+      const response = await axios.get(`${API_URL}/banners`);
       return response.data;
     }
   );
@@ -107,7 +109,7 @@ function AdminDashboard() {
   const createCompany = useMutation<Company, Error, Omit<Company, "id">>(
     async (company: Omit<Company, "id">) => {
       const response = await axios.post(
-        "http://localhost:5001/api/companies",
+        `${API_URL}/companies`,
         company
       );
       return response.data;
@@ -134,7 +136,7 @@ function AdminDashboard() {
   const updateCompany = useMutation<Company, Error, Company>(
     async (company: Company) => {
       const response = await axios.put(
-        `http://localhost:5001/api/companies/${company.id}`,
+        `${API_URL}/companies/${company.id}`,
         company
       );
       return response.data;
@@ -160,7 +162,7 @@ function AdminDashboard() {
 
   const deleteProperty = useMutation<void, Error, string>(
     async (id: string) => {
-      await axios.delete(`http://localhost:5001/api/properties/${id}`);
+      await axios.delete(`${API_URL}/properties/${id}`);
     },
     {
       onSuccess: () => {
@@ -175,7 +177,7 @@ function AdminDashboard() {
 
   const deleteBanner = useMutation<void, Error, string>(
     async (id: string) => {
-      await axios.delete(`http://localhost:5001/api/banners/${id}`);
+      await axios.delete(`${API_URL}/banners/${id}`);
     },
     {
       onSuccess: () => {

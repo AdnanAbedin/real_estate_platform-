@@ -13,6 +13,9 @@ interface Company {
   name: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL ;
+
+
 function AgentProfile({ companyId }: AgentProfileProps) {
   const navigate = useNavigate();
 
@@ -20,7 +23,7 @@ function AgentProfile({ companyId }: AgentProfileProps) {
     ["whatsappStats", companyId],
     async () => {
       const response = await axios.get(
-        `http://localhost:5001/api/whatsapp/stats/${companyId}`
+        `${API_URL}/whatsapp/stats/${companyId}`
       );
       return response.data;
     }
@@ -30,7 +33,7 @@ function AgentProfile({ companyId }: AgentProfileProps) {
     ["company", companyId],
     async () => {
       const response = await axios.get(
-        `http://localhost:5001/api/companies/${companyId}`
+        `${API_URL}/companies/${companyId}`
       );
       return response.data as Company;
     }

@@ -27,6 +27,8 @@ interface Company {
   name: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function PropertyForm({ property, onClose }: PropertyFormProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Property>(
@@ -46,7 +48,7 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
   const { data: companies = [] } = useQuery<Company[]>(
     "companies",
     async () => {
-      const response = await axios.get("http://localhost:5001/api/companies");
+      const response = await axios.get(`${API_URL}/companies`);
       return response.data;
     }
   );
@@ -90,14 +92,14 @@ function PropertyForm({ property, onClose }: PropertyFormProps) {
       if (property?.id) {
         return await axios
           .put(
-            `http://localhost:5001/api/properties/${property.id}`,
+            `${API_URL}/properties/${property.id}`,
             formDataToSend,
             config
           )
           .then((res) => res.data);
       } else {
         return await axios
-          .post("http://localhost:5001/api/properties", formDataToSend, config)
+          .post(`${API_URL}/properties`, formDataToSend, config)
           .then((res) => res.data);
       }
     },

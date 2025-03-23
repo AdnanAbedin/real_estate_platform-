@@ -21,10 +21,13 @@ interface Banner {
   status: "active" | "inactive";
 }
 
+const API_URL = import.meta.env.VITE_API_URL ;
+
+
 function BannerForm({ banner, onClose }: BannerFormProps) {
   const queryClient = useQueryClient();
 
-  // Calculate default dates for new banners
+
   const getDefaultDates = () => {
     const today = new Date();
     const thirtyDaysLater = new Date();
@@ -106,14 +109,14 @@ function BannerForm({ banner, onClose }: BannerFormProps) {
       if (banner?.id) {
         return await axios
           .put(
-            `http://localhost:5001/api/banners/${banner.id}`,
+            `${API_URL}/banners/${banner.id}`,
             formDataToSend,
             config
           )
           .then((res) => res.data);
       } else {
         return await axios
-          .post("http://localhost:5001/api/banners", formDataToSend, config)
+          .post(`${API_URL}/banners`, formDataToSend, config)
           .then((res) => res.data);
       }
     },

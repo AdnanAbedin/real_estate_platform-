@@ -17,10 +17,13 @@ interface BannerRotatorProps {
   placement: "homepage" | "listing" | "search";
 }
 
+const API_URL = import.meta.env.VITE_API_URL ;
+
+
 function BannerRotator({ placement }: BannerRotatorProps) {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
-  // Fetch banners with useQuery
+
   const {
     data: banners = [],
     isLoading,
@@ -29,7 +32,7 @@ function BannerRotator({ placement }: BannerRotatorProps) {
     ["banners", placement],
     async () => {
       const response = await axios.get(
-        `http://localhost:5001/api/banners?placement=${placement}`
+        `${API_URL}/banners?placement=${placement}`
       );
       console.log(`Banners fetched for ${placement}:`, response.data);
       return response.data.filter(

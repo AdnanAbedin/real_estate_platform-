@@ -1,4 +1,3 @@
-// src/pages/PropertyDetailPage.tsx
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation } from "react-query";
@@ -37,8 +36,7 @@ function PropertyDetailPage() {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
 
-  // Use import.meta.env for Vite, with a fallback
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+  const API_URL = import.meta.env.VITE_API_URL ;
 
   const {
     data: property,
@@ -47,7 +45,7 @@ function PropertyDetailPage() {
   } = useQuery<Property>(
     ["property", id],
     async () => {
-      console.log(`Fetching property from: ${API_URL}/properties/${id}`); // Debug log
+      console.log(`Fetching property from: ${API_URL}/properties/${id}`); 
       const response = await axios.get(`${API_URL}/properties/${id}`);
       return response.data;
     },
